@@ -5,6 +5,11 @@ import {
   atualizarMovimentoContabil,
   deletarMovimentoContabil,
 } from "./components/MovimentoContabilService";
+import { visualizarPlanoContas } from "./components/planoContasService";
+import { visualizarItemOrdemComprar } from "./components/ITEM_ORDEM_DE_COMPRARService";
+import { visualizarItensVenda } from "./components/Itens_da_VendaService";
+import { visualizarEscrituraFiscal } from "./components/EscrituraFiscalService";
+
 import { Button, Modal, Form } from "react-bootstrap";
 
 const MovimentoContabil = () => {
@@ -28,6 +33,83 @@ const MovimentoContabil = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [fetchError, setFetchError] = useState(false);
 
+//PLANO CONTAS ID
+
+  // Estado para Plano de Contas
+  const [planosDeContas, setPlanosDeContas] = useState([]);
+  const [selectedPlanoDeContas, setSelectedPlanoDeContas] = useState('');
+
+  // Estado para Escritura Fiscal
+  const [escrituras, setEscrituras] = useState([]);
+  const [selectedEscritura, setSelectedEscritura] = useState('');
+
+  // Estado para Itens da Venda
+  const [itensVenda, setItensVenda] = useState([]);
+  const [selectedItemVenda, setSelectedItemVenda] = useState('');
+
+  // Estado para Itens da Ordem de Compra
+  const [itensOrdem, setItensOrdem] = useState([]);
+  const [selectedItemOrdem, setSelectedItemOrdem] = useState('');
+
+  // useEffect para buscar dados dos planos de contas
+  useEffect(() => {
+    const fetchPlanosDeContas = async () => {
+      try {
+        const planos = await visualizarPlanoContas();
+        setPlanosDeContas(planos);
+      } catch (error) {
+        console.error('Erro ao buscar planos de contas:', error);
+      }
+    };
+
+    fetchPlanosDeContas();
+  }, []);
+
+  // useEffect para buscar dados das escrituras fiscais
+  useEffect(() => {
+    const fetchEscrituras = async () => {
+      try {
+        const escrits = await visualizarEscrituraFiscal();
+        setEscrituras(escrits);
+      } catch (error) {
+        console.error('Erro ao buscar escrituras fiscais:', error);
+      }
+    };
+
+    fetchEscrituras();
+  }, []);
+
+  // useEffect para buscar dados dos itens de venda
+  useEffect(() => {
+    const fetchItensVenda = async () => {
+      try {
+        const itens = await visualizarItensVenda();
+        setItensVenda(itens);
+      } catch (error) {
+        console.error('Erro ao buscar itens de venda:', error);
+      }
+    };
+
+    fetchItensVenda();
+  }, []);
+
+  // useEffect para buscar dados dos itens da ordem de compra
+  useEffect(() => {
+    const fetchItensOrdem = async () => {
+      try {
+        const itens = await visualizarItemOrdemComprar();
+        setItensOrdem(itens);
+      } catch (error) {
+        console.error('Erro ao buscar itens da ordem de compra:', error);
+      }
+    };
+
+    fetchItensOrdem();
+  }, []);
+
+
+
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -39,6 +121,7 @@ const MovimentoContabil = () => {
     };
     fetchData();
   }, []);
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -153,7 +236,7 @@ const MovimentoContabil = () => {
         <div className="alert alert-danger" role="alert">
           Não foi possível acessar o banco de dados.
         </div>
-        <Button variant="primary" /*onClick={() => history.push("/")  } */>
+        <Button variant="primary" >
           Ir para a página inicial
         </Button>
       </div>
@@ -162,10 +245,12 @@ const MovimentoContabil = () => {
 
   return (
     <div className="container mt-5">
-      <h1>movimentos de Contas</h1>
+      <h1>MOVIMENTO CONTABIL</h1>
+      <br/>
       <Button variant="primary" onClick={() => setShowModal(true)}>
         Cadastrar Novo Plano
       </Button>
+      <br/>
       <ul className="list-group mt-4">
         {movimentos.map((plano) => (
           <li
@@ -216,7 +301,7 @@ const MovimentoContabil = () => {
               />
             </Form.Group>
             <Form.Group controlId="formData">
-              <Form.Label>Data</Form.Label>
+              <Form.Label>Data de Lançamento</Form.Label>
               <Form.Control
                 type="date"
                 value={dados.Data}
@@ -253,50 +338,82 @@ const MovimentoContabil = () => {
                 <option value="indefinido">Indefinido</option>
               </Form.Control>
             </Form.Group>
-            <Form.Group controlId="formIdPlanoContas">
+
+         
+          <Form.Group controlId="formIdPlanoContas">
               <Form.Label>ID Plano de Contas</Form.Label>
               <Form.Control
-                type="text"
+                as="select"
                 value={dados.idPlanoContas}
                 onChange={(e) =>
                   setDados({ ...dados, idPlanoContas: e.target.value })
                 }
-                placeholder="Digite o ID do plano de contas"
-              />
+              >
+                <option value="">Selecione selecione uma das opções</option>
+                {planosDeContas.map((plano) => (
+                  <option key={plano.idPlanoContas} value={plano.idPlanoContas}>
+                    {plano.CodigoPlano}
+                  </option>
+                ))}
+              </Form.Control>
             </Form.Group>
+{/******************************** */}
             <Form.Group controlId="formIdEscrituraFiscal">
               <Form.Label>ID Escritura Fiscal</Form.Label>
               <Form.Control
-                type="text"
+                as="select"
                 value={dados.IdEscrituraFiscal}
                 onChange={(e) =>
                   setDados({ ...dados, IdEscrituraFiscal: e.target.value })
                 }
-                placeholder="Digite o ID da escritura fiscal"
-              />
+              >
+                <option value="">Selecione selecione uma das opções</option>
+                {escrituras.map((plano) => (
+                  <option key={plano.IdEscrituraFiscal} value={plano.IdEscrituraFiscal}>
+                   Id: {plano.IdEscrituraFiscal} - Descrição: {plano.Descricao}
+                  </option>
+                ))}
+              </Form.Control>
             </Form.Group>
+            
+{/******************************** */}
+{/******************************** */}
             <Form.Group controlId="formIdVendas">
               <Form.Label>ID Vendas</Form.Label>
               <Form.Control
-                type="text"
+                as="select"
                 value={dados.id_Vendas}
                 onChange={(e) =>
                   setDados({ ...dados, id_Vendas: e.target.value })
                 }
-                placeholder="Digite o ID de vendas"
-              />
+              >
+                <option value="">Selecione selecione uma das opções</option>
+                {itensVenda.map((plano) => (
+                  <option key={plano.id_Vendas} value={plano.id_Vendas}>
+                   Codigo do Especialista: {plano.cod_espec} - Valor: {plano.Valor}
+                  </option>
+                ))}
+              </Form.Control>
             </Form.Group>
-            <Form.Group controlId="formIdItemOrdemComp">
+            
+            <Form.Group controlId="formIdVendas">
               <Form.Label>ID Item Ordem Compra</Form.Label>
               <Form.Control
-                type="text"
+                as="select"
                 value={dados.id_item_ordem_comp}
                 onChange={(e) =>
                   setDados({ ...dados, id_item_ordem_comp: e.target.value })
                 }
-                placeholder="Digite o ID do item ordem de compra"
-              />
+              >
+                <option value="">Selecione selecione uma das opções</option>
+                {itensOrdem.map((plano) => (
+                  <option key={plano.id_item_ordem_comp} value={plano.id_item_ordem_comp}>
+                   Valor: {plano.Valor} - Forma_Pagamento: {plano.Forma_Pagamento}
+                  </option>
+                ))}
+              </Form.Control>
             </Form.Group>
+
             <Form.Group controlId="formValorDebito">
               <Form.Label>Valor Débito</Form.Label>
               <Form.Control
@@ -349,6 +466,7 @@ const MovimentoContabil = () => {
                 placeholder="Digite o valor débito"
               />
             </Form.Group>
+            <br/>
             <Button variant="primary" type="submit">
               {isEditing ? "Atualizar" : "Cadastrar"}
             </Button>
