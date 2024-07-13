@@ -5,8 +5,7 @@ import {
   atualizarPlanoConta,
   deletarPlanoConta,
 } from "./components/planoContasService";
-import { Form, Button, Modal } from "react-bootstrap";
-import "./planoContas.css"
+import { Button, Modal, Form } from "react-bootstrap";
 
 const PlanoContas = () => {
   const [planos, setPlanos] = useState([]);
@@ -18,35 +17,49 @@ const PlanoContas = () => {
   });
   const [isEditing, setIsEditing] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [fetchError, setFetchError] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
-      const data = await visualizarPlanoContas();
-      setPlanos(data);
+      try {
+        const data = await visualizarPlanoContas();
+        setPlanos(data);
+      } catch (error) {
+        setFetchError(true);
+      }
     };
     fetchData();
   }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (isEditing) {
-      await atualizarPlanoConta(dados.idPlanoContas, {
-        CodigoPlano: dados.CodigoPlano,
-        Descricao: dados.Descricao,
-        Tipo: dados.Tipo,
-      });
-    } else {
-      await cadastrarPlanoContas({
-        CodigoPlano: dados.CodigoPlano,
-        Descricao: dados.Descricao,
-        Tipo: dados.Tipo,
-      });
+    try {
+      if (isEditing) {
+        await atualizarPlanoConta(dados.idPlanoContas, {
+          CodigoPlano: dados.CodigoPlano,
+          Descricao: dados.Descricao,
+          Tipo: dados.Tipo,
+        });
+      } else {
+        await cadastrarPlanoContas({
+          CodigoPlano: dados.CodigoPlano,
+          Descricao: dados.Descricao,
+          Tipo: dados.Tipo,
+        });
+      }
+      const data = await visualizarPlanoContas();
+      setPlanos(data);
+      setDados({ idPlanoContas: "", CodigoPlano: "", Descricao: "", Tipo: "" });
+      setIsEditing(false);
+      setShowModal(false);
+    } catch (error) {
+      setErrorMessage(
+        error.response?.data?.error || "Erro ao salvar os dados."
+      );
+      setShowErrorModal(true);
     }
-    const data = await visualizarPlanoContas();
-    setPlanos(data);
-    setDados({ idPlanoContas: "", CodigoPlano: "", Descricao: "", Tipo: "" });
-    setIsEditing(false);
-    setShowModal(false);
   };
 
   const handleEdit = (plano) => {
@@ -56,9 +69,18 @@ const PlanoContas = () => {
   };
 
   const handleDelete = async (idPlanoContas) => {
-    await deletarPlanoConta(idPlanoContas);
-    const data = await visualizarPlanoContas();
-    setPlanos(data);
+    try {
+      await deletarPlanoConta(idPlanoContas);
+      const data = await visualizarPlanoContas();
+      setPlanos(data);
+    } catch (error) {
+      if (error.response && error.response.data && error.response.data.error) {
+        setErrorMessage(error.response.data.error);
+      } else {
+        setErrorMessage("Erro ao deletar o plano de contas.");
+      }
+      setShowErrorModal(true);
+    }
   };
 
   const handleClose = () => {
@@ -66,6 +88,21 @@ const PlanoContas = () => {
     setIsEditing(false);
     setDados({ idPlanoContas: "", CodigoPlano: "", Descricao: "", Tipo: "" });
   };
+
+  const handleErrorModalClose = () => setShowErrorModal(false);
+
+  if (fetchError) {
+    return (
+      <div className="container mt-5">
+        <div className="alert alert-danger" role="alert">
+          Não foi possível acessar o banco de dados.
+        </div>
+        <Button variant="primary" /*onClick={() => history.push("/")  } */>
+          Ir para a página inicial
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="container mt-5">
@@ -75,11 +112,26 @@ const PlanoContas = () => {
       </Button>
       <ul className="list-group mt-4">
         {planos.map((plano) => (
-          <li key={plano.idPlanoContas} className="list-group-item d-flex justify-content-between align-items-center">
-            {plano.idPlanoContas} // {plano.CodigoPlano} - {plano.Descricao} - {plano.Tipo}
+          <li
+            key={plano.idPlanoContas}
+            className="list-group-item d-flex justify-content-between align-items-center"
+          >
+            {plano.idPlanoContas} // {plano.CodigoPlano} - {plano.Descricao} -{" "}
+            {plano.Tipo}
             <div>
-              <Button variant="warning" className="mr-2" onClick={() => handleEdit(plano)}>Editar</Button>
-              <Button variant="danger" onClick={() => handleDelete(plano.idPlanoContas)}>Deletar</Button>
+              <Button
+                variant="warning"
+                className="mr-2"
+                onClick={() => handleEdit(plano)}
+              >
+                Editar
+              </Button>
+              <Button
+                variant="danger"
+                onClick={() => handleDelete(plano.idPlanoContas)}
+              >
+                Deletar
+              </Button>
             </div>
           </li>
         ))}
@@ -87,7 +139,11 @@ const PlanoContas = () => {
 
       <Modal show={showModal} onHide={handleClose}>
         <Modal.Header closeButton>
-          <Modal.Title>{isEditing ? "Atualizar Plano de Contas" : "Cadastrar Plano de Contas"}</Modal.Title>
+          <Modal.Title>
+            {isEditing
+              ? "Atualizar Plano de Contas"
+              : "Cadastrar Plano de Contas"}
+          </Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <Form onSubmit={handleSubmit}>
@@ -96,7 +152,9 @@ const PlanoContas = () => {
               <Form.Control
                 type="text"
                 value={dados.CodigoPlano}
-                onChange={(e) => setDados({ ...dados, CodigoPlano: e.target.value })}
+                onChange={(e) =>
+                  setDados({ ...dados, CodigoPlano: e.target.value })
+                }
                 placeholder="Digite o código do plano"
                 required
               />
@@ -106,7 +164,9 @@ const PlanoContas = () => {
               <Form.Control
                 type="text"
                 value={dados.Descricao}
-                onChange={(e) => setDados({ ...dados, Descricao: e.target.value })}
+                onChange={(e) =>
+                  setDados({ ...dados, Descricao: e.target.value })
+                }
                 placeholder="Digite a descrição"
                 required
               />
@@ -126,6 +186,18 @@ const PlanoContas = () => {
             </Button>
           </Form>
         </Modal.Body>
+      </Modal>
+
+      <Modal show={showErrorModal} onHide={handleErrorModalClose}>
+        <Modal.Header closeButton>
+          <Modal.Title>Erro</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>{errorMessage}</Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleErrorModalClose}>
+            Fechar
+          </Button>
+        </Modal.Footer>
       </Modal>
     </div>
   );
